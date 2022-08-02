@@ -19,6 +19,7 @@ public class PlayerController : MonoBehaviour
     public Transform ledgeCheck;
 
     [Header("Player")]
+    public GameObject player;
     public Rigidbody2D rb;
     public Animator anim;
     public float movementSpeed = 10.0f;
@@ -35,6 +36,7 @@ public class PlayerController : MonoBehaviour
     // public float jumpTimer;
     public float turnTimer;
     // public float wallJumpTimer;
+    public Rigidbody2D rbEnemy;
 
     [Header("Layer Mask")]
     public LayerMask whatIsGround;
@@ -66,6 +68,7 @@ public class PlayerController : MonoBehaviour
     public bool canDash = false;
     public bool uHasDash = false;
     public bool canSlide;
+    public bool hadToFollow;
 
     [Header("Vector 2")]
     public Vector2 ledgePosBot;
@@ -93,12 +96,16 @@ public class PlayerController : MonoBehaviour
     public GameObject dashPanel;
     public GameObject detectColliderEnemy;
     public GameObject triggerForEnemy;
+    public GameObject right;
+    public GameObject left;
+    public GameObject enemy;
 
 
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        rbEnemy = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
         amountOfJumpsLeft = amountOfJumps;
 
@@ -106,6 +113,9 @@ public class PlayerController : MonoBehaviour
         canSlide = true;
         isJumping = false;
         isDashinng = false;
+
+        // enemy
+        hadToFollow = false;
     }
 
     // Update is called once per frame
@@ -128,7 +138,8 @@ public class PlayerController : MonoBehaviour
         // Debug.Log("facingDirection " + facingDirection + " " + movementInputDirection);
         // Debug.Log("uHasDash" + " " + uHasDash);
         // Debug.Log(isWallSliding);
-        Debug.Log("Facing Direction = " + facingDirection);
+        // Debug.Log("Facing Direction = " + facingDirection);
+        Debug.Log(hadToFollow);
 
         // Debug.Log(dashTimer);
 
@@ -188,7 +199,7 @@ public class PlayerController : MonoBehaviour
         // if (Input.GetKeyDown(KeyCode.G))
         // {
         //     rb.velocity = new Vector2(20, rb.velocity.y);
-        // }            
+        // }         
     }
 
     public void DetectEnemy()
@@ -200,9 +211,16 @@ public class PlayerController : MonoBehaviour
         if (hit.collider)
         {
             if (hit.collider.isTrigger && (triggerForEnemy.tag == "detectEnemyCol")){
-                Debug.Log("Dans la zone de collider !");               
+                hadToFollow = true;
+            } else if (hit.collider.isTrigger && (triggerForEnemy.tag == "detectEnemyCol"))
+            {
+                hadToFollow = false;
             }
-        }  
+        } else 
+        {
+            hadToFollow = false;   
+        } 
+        
     }
 
     // IEnumerator slideCor()
