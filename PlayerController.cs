@@ -28,6 +28,7 @@ public class PlayerController : MonoBehaviour
     public float wallJumpForceX;
     public float wallJumpForceY;
     public ParticleSystem dust;
+    public Slider healthBar;
 
     public float wallJumpForce;
 
@@ -99,6 +100,7 @@ public class PlayerController : MonoBehaviour
     public GameObject right;
     public GameObject left;
     public GameObject enemy;
+    public GameObject panelDeadPlayer;
 
 
     // Start is called before the first frame update
@@ -116,6 +118,9 @@ public class PlayerController : MonoBehaviour
 
         // enemy
         hadToFollow = false;
+
+        // UI
+        panelDeadPlayer.SetActive(false);
     }
 
     // Update is called once per frame
@@ -199,11 +204,27 @@ public class PlayerController : MonoBehaviour
         // if (Input.GetKeyDown(KeyCode.G))
         // {
         //     rb.velocity = new Vector2(20, rb.velocity.y);
-        // }         
+        // }    
+
+        if (healthBar.value == 0)
+        {
+            panelDeadPlayer.SetActive(true);
+            StartCoroutine(deadPlayer());
+        } else if (healthBar.value > 0)
+        {
+            panelDeadPlayer.SetActive(false);
+        }  
+    }
+
+    IEnumerator deadPlayer()
+    {
+        yield return new WaitForSeconds(0.5f);
     }
 
     public void DetectEnemy()
     {
+
+        Debug.Log(hadToFollow);
         RaycastHit2D hit = Physics2D.Raycast(detectColliderEnemy.transform.position, transform.right, .02f);
 
         Debug.DrawRay(detectColliderEnemy.transform.position, transform.right * .02f, Color.red);
@@ -212,9 +233,6 @@ public class PlayerController : MonoBehaviour
         {
             if (hit.collider.isTrigger && (triggerForEnemy.tag == "detectEnemyCol")){
                 hadToFollow = true;
-            } else if (hit.collider.isTrigger && (triggerForEnemy.tag == "detectEnemyCol"))
-            {
-                hadToFollow = false;
             }
         } else 
         {

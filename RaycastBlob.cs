@@ -8,6 +8,7 @@ public class RaycastBlob : MonoBehaviour
     public GameObject trigger1;
     public GameObject trigger2;
     public BlobBEnemyController blob;
+    public PlayerController pc;
 
     void Update()
     {
@@ -23,7 +24,6 @@ public class RaycastBlob : MonoBehaviour
         if (hit.collider)
         {
             if (hit.collider.isTrigger && (trigger1.tag == "TriggerForBlob" || trigger2.tag == "TriggerForBlob")){
-                // Debug.Log("Touché !");
                 Flip();                
             }
         }  
