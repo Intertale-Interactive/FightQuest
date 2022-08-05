@@ -11,6 +11,7 @@ public class BlobBEnemyController : MonoBehaviour
     public GameObject enemy;
     public RaycastHit hit;
     public bool canAttack;
+    public bool stop;
     public float direction;
     public float speed = 3f;
     public Slider playerSlider;
@@ -24,35 +25,44 @@ public class BlobBEnemyController : MonoBehaviour
         direction = -1.5f;
 
         canAttack = false;
+        stop = false;
     }
 
     void Update()
     {
-        // FollowPlayer();
+        FollowPlayer();
 
         VerifyCanAttack();
         Attack1();
+
+        // Debug.Log("Stop = " + stop);
     }
 
-    // public void FollowPlayer()
-    // {
-    //     if (playerController.hadToFollow == false)
-    //     {
-    //         rb.velocity = new Vector2(direction, rb.velocity.y);
-    //     } else if (playerController.hadToFollow == true)
-    //     {
-    //         transform.position = Vector2.MoveTowards(transform.position, player.transform.position, speed * Time.deltaTime);
-    //     }
+    public void FollowPlayer()
+    {
+        float dist = Vector2.Distance(player.transform.position, enemy.transform.position);
 
-    //      float dist = Vector2.Distance(player.transform.position, enemy.transform.position);
+        if (dist < 1.37f)
+        {
+            stop = true;
+            rb.velocity = new Vector2(0, 0);
+        } else if (dist > 1.37f)
+        {
+            stop = false;
+        }
 
-    //     if (dist < 2.000000f)
-    //     {
-    //         // Debug.Log("Dist = " + dist);
-    //         playerController.hadToFollow = false;
-    //         rb.velocity = new Vector2(0, rb.velocity.y);
-    //     }
-    // }
+        if (!stop)
+        {
+            if (playerController.hadToFollow == false)
+            {
+                rb.velocity = new Vector2(direction, rb.velocity.y);
+            } 
+            else if (playerController.hadToFollow == true) 
+            {
+                transform.position = Vector2.MoveTowards(transform.position, player.transform.position, speed * Time.deltaTime);
+            }
+        }  
+    }
 
     public void Attack1()
     {
@@ -70,7 +80,7 @@ public class BlobBEnemyController : MonoBehaviour
     public void VerifyCanAttack()
     {
         float dist1 = Vector2.Distance(player.transform.position, enemy.transform.position);
-        Debug.Log(dist1);
+        // Debug.Log(dist1);
 
         if (dist1 < 1.37f)
         {
