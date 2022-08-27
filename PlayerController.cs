@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour
     public float wallJumpForceY;
     public ParticleSystem dust;
     public Slider healthBar;
+    public PlayerCombatController playerCombatController;
 
     public float wallJumpForce;
 
@@ -62,7 +63,6 @@ public class PlayerController : MonoBehaviour
     public bool checkJumpMultiplier;
     public bool canMove;
     public bool canFlip;
-    public bool hasWallJumped;
     public bool isTouchingLedge;
     public bool canClimbLedge = false;
     public bool ledgeDetected;
@@ -91,17 +91,28 @@ public class PlayerController : MonoBehaviour
     public float ledgeClimbYOffset1 = 0f;
     public float ledgeClimbXOffset2 = 0f;
     public float ledgeClimbYOffset2 = 0f;
-    public float wallSlideTimer = 0.5f;
+    public float wallSlideTimer;
 
     [Header("GameObjects")]
     public GameObject dashPanel;
     public GameObject detectColliderEnemy;
     public GameObject triggerForEnemy;
-    public GameObject right;
-    public GameObject left;
+    public GameObject life;
     public GameObject enemy;
     public GameObject panelDeadPlayer;
+    public GameObject aTcTiVeRaY;
 
+    [Header("Blobs Sliders")]
+    public Slider enemyHealthBar;
+    public Slider enemyHealthBar2;
+
+    [Header("Blobs Player Combats Controller Scripts")]
+    public BlobBEnemyController blobBEnemyController;
+
+    [Header("Sounds")]
+    public GameObject audioSource;
+    public AudioSource attackSound1;
+    public AudioSource jumpSound1;
 
     // Start is called before the first frame update
     void Start()
@@ -137,14 +148,19 @@ public class PlayerController : MonoBehaviour
         // BY ME //
         CheckCanDash();
         DetectEnemy();
+        DetectLife();
+        ApplySoundAndParticles();
+
+        wallSlideTimer -= Time.deltaTime;
 
         dashText.text = dashTimer.ToString();
-
+        Debug.Log(isJumping);
+        // Debug.Log(canWallJump + " " + isWallSliding);
         // Debug.Log("facingDirection " + facingDirection + " " + movementInputDirection);
         // Debug.Log("uHasDash" + " " + uHasDash);
         // Debug.Log(isWallSliding);
         // Debug.Log("Facing Direction = " + facingDirection);
-        Debug.Log(hadToFollow);
+        // Debug.Log(hadToFollow);
 
         // Debug.Log(dashTimer);
 
@@ -206,14 +222,21 @@ public class PlayerController : MonoBehaviour
         //     rb.velocity = new Vector2(20, rb.velocity.y);
         // }    
 
-        if (healthBar.value == 0)
+        // ------------------------------------- Momentum Dead System boi ------------------------------------- //
+
+        if (healthBar.value <= 0)
         {
             panelDeadPlayer.SetActive(true);
             StartCoroutine(deadPlayer());
         } else if (healthBar.value > 0)
         {
             panelDeadPlayer.SetActive(false);
-        }  
+        }
+
+        if (wallSlideTimer > 0)
+        {
+            canWallJump = false;
+        }
     }
 
     IEnumerator deadPlayer()
@@ -223,28 +246,40 @@ public class PlayerController : MonoBehaviour
 
     public void DetectEnemy()
     {
-
-        Debug.Log(hadToFollow);
         RaycastHit2D hit = Physics2D.Raycast(detectColliderEnemy.transform.position, transform.right, .02f);
+        // Debug.Log("Tag and Bool = " + hit.collider.tag + " and " + hadToFollow);
 
         Debug.DrawRay(detectColliderEnemy.transform.position, transform.right * .02f, Color.red);
 
         if (hit.collider)
         {
-            if (hit.collider.isTrigger && (triggerForEnemy.tag == "detectEnemyCol")){
+            if (hit.collider.tag == "detectEnemyCol")
+            {
                 hadToFollow = true;
+            } else if (hit.collider.tag == "Player")
+            {
+                hadToFollow = false;
             }
-        } else 
+        } else
         {
-            hadToFollow = false;   
-        } 
-        
+            hadToFollow = false;
+        }        
     }
 
-    // IEnumerator slideCor()
-    // {
-        
-    // }
+    public void DetectLife()
+    {
+        // Create trigger for life
+        RaycastHit2D hitLife = Physics2D.Raycast(life.transform.position, transform.right, .02f);
+        Debug.DrawRay(life.transform.position, transform.right * .02f, Color.red);
+        if (hitLife.collider && healthBar.value <= 90)
+        {
+            if (hitLife.collider.tag == "Life")
+            {
+                healthBar.value += 10;
+                Destroy(hitLife.collider.gameObject);
+            }
+        }
+    }
 
     private void FixedUpdate()
     {
@@ -430,14 +465,13 @@ public class PlayerController : MonoBehaviour
 
     private void CheckIfWallSliding()
     {
-        if (isTouchingWall && rb.velocity.y < 0 && !canClimbLedge && wallSlideTimer <= 0)
+        if (isTouchingWall && rb.velocity.y < 0 && !canClimbLedge)
         {
             isWallSliding = true;
         }
         else
         {
             isWallSliding = false;
-            wallSlideTimer -= Time.deltaTime;
         }
     }
 
@@ -449,7 +483,7 @@ public class PlayerController : MonoBehaviour
             dashPanel.SetActive(true);
         }
 
-        if (dashTimer <= 0)
+        if (dashTimer < 0)
         {
             dashPanel.SetActive(false);
             // Debug.Log("DESACTIVATION");
@@ -525,7 +559,7 @@ public class PlayerController : MonoBehaviour
             // isAttemptingToJump = false;
             checkJumpMultiplier = true;
             isJumping = true;
-        }
+        } 
     }
 
     private void WallJump()
@@ -554,17 +588,29 @@ public class PlayerController : MonoBehaviour
             }
     }
 
+    public void ApplySoundAndParticles()
+    {
+        if (movementInputDirection != 0 && !isWallSliding && isGrounded)
+        {
+            audioSource.SetActive(true);
+            Dust();
+        } else 
+        {
+            audioSource.SetActive(false);
+        }
+    }
+
     private void ApplyMovement()
     {
 
         if (!isGrounded && !isWallSliding && movementInputDirection == 0)
         {
             rb.velocity = new Vector2(rb.velocity.x * airDragMultiplier, rb.velocity.y);
+            audioSource.SetActive(false);
         }
         else 
         {
             rb.velocity = new Vector2(movementSpeed * movementInputDirection, rb.velocity.y);
-            Dust();
         }
         
 
@@ -597,5 +643,54 @@ public class PlayerController : MonoBehaviour
     public void Dust()
     {
         dust.Play();
+    }
+
+    public void AttackOtherBlobs()
+    {
+        // ------------------------------------- Create Raycast For Attack Others Blobs ------------------------------------- //
+
+        RaycastHit2D hitMD = Physics2D.Raycast(aTcTiVeRaY.transform.position, Vector2.right, .05f);
+        Debug.DrawRay(aTcTiVeRaY.transform.position, Vector2.right * .05f, Color.red);
+
+        if (hitMD.collider)
+        {
+            // Debug.Log("hitMD.collider.tag = " + hitMD.collider.tag);
+            if (hitMD.collider.tag == "Blob1")
+            {
+                enemyHealthBar.value -= 10;
+            }
+            else if (hitMD.collider.tag == "Blob2")
+            {
+                enemyHealthBar.value -= 10;
+            }
+            else if (hitMD.collider.tag == "Blob3")
+            {
+                enemyHealthBar2.value -= 10;
+            }
+        } else {
+            Debug.Log("No hit");
+        }
+    }
+
+    public void ActiveWallSLide()
+    {
+        if (wallSlideTimer <= 0 && isWallSliding)
+        {
+            canWallJump = true;
+            wallSlideTimer = .32f;
+        }
+    }
+
+    public void ActveAttackSound()
+    {
+        attackSound1.Play();
+    }
+
+    public void ActiveJumpSound()
+    {
+        if (isJumping)
+        {
+            jumpSound1.Play();
+        }
     }
 }
